@@ -54,7 +54,7 @@ public class aCaPulCO_SettingsIBEA extends Settings {
 	@SuppressWarnings("unchecked")
 	public Algorithm configure(ToolInstrumenter toolInstrumenter, StoppingCondition stoppingCondition,
 			Integer stoppingValue, String fm,  int numFeat,
-			List<List<Integer>> constr, List<ConfigurationSearchOperator> rules) throws JMException {
+			List<List<Integer>> constr, List<ConfigurationSearchOperator> rules, List<List<Integer>> complexConstraints) throws JMException {
 
 		populationSize_ = 100;
 		archiveSize_ = 100;
@@ -69,10 +69,9 @@ public class aCaPulCO_SettingsIBEA extends Settings {
 		Operator selection;
 		Operator crossover;
 		Operator mutation;
-
+		Operator fix;
+		
 		HashMap parameters; // Operator parameters
-
-			
 		
 		if (stoppingCondition == StoppingCondition.TIME) {
 			algorithm = new IBEATimeLimited(problem_, stoppingValue, toolInstrumenter);
@@ -114,11 +113,16 @@ public class aCaPulCO_SettingsIBEA extends Settings {
 		parameters.put("comparator", new FitnessComparator());
 		selection = new BinaryTournament(parameters);
 
+		/* Fix operator */
+		parameters = new HashMap<>();
+		fix = new aCaPulCO_Fix(parameters, mutation_, feature2DeactivationRule, feature2DeactivationRule, complexConstraints, trueOptionalFeatures);
+		
 		// Add the operators to the algorithm
 		algorithm.addOperator("crossover", crossover);
 		algorithm.addOperator("mutation", mutation);
 		algorithm.addOperator("selection", selection);
-
+		algorithm.addOperator("fix", fix);
+		
 		return algorithm;
 	}
 

@@ -34,7 +34,7 @@ public class IBEAEvolutionsLimited extends AbstractIBEA {
 		long currentStep = 0;
 
 		int populationSize, archiveSize, evaluations;
-		Operator crossoverOperator, mutationOperator, selectionOperator;
+		Operator crossoverOperator, mutationOperator, selectionOperator, fixOperator;
 		SolutionSet solutionSet, archive, offSpringSolutionSet;
 
 		// Read the params
@@ -45,6 +45,7 @@ public class IBEAEvolutionsLimited extends AbstractIBEA {
 		crossoverOperator = operators_.get("crossover");
 		mutationOperator = operators_.get("mutation");
 		selectionOperator = operators_.get("selection");
+		fixOperator = operators_.get("fix");
 
 		// Initialize the variables
 		solutionSet = new SolutionSet(populationSize);
@@ -55,6 +56,9 @@ public class IBEAEvolutionsLimited extends AbstractIBEA {
 		Solution newSolution;
 		for (int i = 0; i < populationSize; i++) {
 			newSolution = new Solution(problem_);
+			
+			newSolution = (Solution) fixOperator.execute(newSolution);
+			
 			problem_.evaluate(newSolution);
 			problem_.evaluateConstraints(newSolution);
 			evaluations++;
@@ -89,6 +93,9 @@ public class IBEAEvolutionsLimited extends AbstractIBEA {
 				// make the crossover
 				Solution[] offSpring = (Solution[]) crossoverOperator.execute(parents);
 				mutationOperator.execute(offSpring[0]);
+				
+				offSpring[0] = (Solution) fixOperator.execute(offSpring[0]);
+				
 				problem_.evaluate(offSpring[0]);
 				problem_.evaluateConstraints(offSpring[0]);
 				offSpringSolutionSet.add(offSpring[0]);

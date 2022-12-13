@@ -41,6 +41,7 @@ public class aCaPulCO_Main extends AbstractExecutor {
 		StoppingCondition sc = StoppingCondition.EVOLUTIONS;
 		Integer sv = 50;
 		boolean debug = true;
+		boolean includeFixOperator = false;
 
 		aCaPulCO_Main main = new aCaPulCO_Main();
 
@@ -50,10 +51,13 @@ public class aCaPulCO_Main extends AbstractExecutor {
 			sv = Integer.parseInt(args[2]);
 			debug = Boolean.parseBoolean(args[3]);
 		}
+		if (args.length > 4) {
+			includeFixOperator = Boolean.parseBoolean(args[4]);
+		}
 
 		for (int i = 0; i < 60; i++) {
 			System.out.println("Run " + i);
-			main.run(fm, sc, sv, debug);
+			main.run(fm, sc, sv, debug, includeFixOperator);
 		}
 
 //		int exitCode = new CommandLine(new aCaPulCO_Main()).execute(args);
@@ -66,43 +70,64 @@ public class aCaPulCO_Main extends AbstractExecutor {
 		StoppingCondition sc = stoppingCondition;
 		Integer sv = stoppingValue;
 		Boolean debug = debugMode;
-		run(fm, sc, sv, debug);
+		boolean includeFixOperator = fixOperatorMode;
+		run(fm, sc, sv, debug, includeFixOperator);
 	}
 
-	public void run(String fm, StoppingCondition sc, Integer sv, boolean debug) {
+	public void run(String fm, StoppingCondition sc, Integer sv, boolean debug, boolean includeFixOperator) {
 		String rules = fm + ".cpcos";
 		Map<String, Integer> featureName2index = readFeatureNameMapFromFile(fm);
 		List<ConfigurationSearchOperator> operators = readOperatorsFromDirectory(rules, featureName2index);
-		run(fm, sc, sv, debug, operators);
+		run(fm, sc, sv, debug, includeFixOperator, operators);
 	}
 
-	public void run(String fm, StoppingCondition sc, Integer sv, boolean debug,
+	public void run(String fm, StoppingCondition sc, Integer sv, boolean debug, boolean includeFixOperator,
 			List<ConfigurationSearchOperator> operators) {
 		String augment = fm + ".augment";
 		String dead = fm + ".dead";
 		String mandatory = fm + ".mandatory";
 		String seed = fm + ".richseed";
+		String complex = fm + ".complex";
 
-		Problem p = null;
+		aCaPulCO_Problem p = null;
 		Algorithm a = null;
 		SolutionSet pop = null;
 		try {
 			aCaPulCO_Mutation.DEBUG_MODE = debug;
-			p = new aCaPulCO_Problem(fm, augment, mandatory, dead, seed);
+			p = new aCaPulCO_Problem(fm, augment, mandatory, dead, seed, complex);
 			ToolInstrumenter toolInstrumenter = new ToolInstrumenter(p.getNumberOfObjectives(),
 					p.getNumberOfConstraints(), "ACAPULCO", "acapulco-results", 1);
+			
+			List<List<Integer>> complexConstraints;
+			if (includeFixOperator) {
+				complexConstraints = p.getComplexConstraints();
+			} else {
+				complexConstraints = new ArrayList<List<Integer>>();
+			}
+			
 			a = new aCaPulCO_SettingsIBEA(p).configure(toolInstrumenter, sc, sv, fm,
-					((aCaPulCO_Problem) p).getNumFeatures(), ((aCaPulCO_Problem) p).getConstraints(), operators);
+					p.getNumFeatures(), p.getConstraints(), operators, complexConstraints);
+			
+			long start = System.currentTimeMillis();
 			pop = a.execute();
-
+			long timeTaken = System.currentTimeMillis() - start;
+			System.out.println("Took " + timeTaken + "ms");
+			if (includeFixOperator) {
+				System.out.println("Amount of times fix was needed: " + aCaPulCO_Fix.NumberOfFixes);
+				System.out.println("Non random fixes: " + aCaPulCO_Fix.SmartFixes);
+			}
 		} catch (Exception e) {
-			e.printStackTrace();
+			e.printStackTrace(System.out);
 		}
 
 		System.out.println("******* END OF RUN! SOLUTIONS: ***");
-
+			
+		if (pop == null) {
+			System.out.println("Population is null, algorithm run failed!");
+			return;
+		}
+		
 		for (int i = 0; i < pop.size(); i++) {
-			Variable v = pop.get(i).getDecisionVariables()[0];
 			for (int j = 0; j < 5; j++) {
 				System.out.print(pop.get(i).getObjective(j) + " ");
 			}

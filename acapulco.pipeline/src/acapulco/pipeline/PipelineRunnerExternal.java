@@ -77,6 +77,9 @@ public class PipelineRunnerExternal {
         option8.setRequired(false);
         options.addOption(option8);
         
+        Option option9 = new Option("fix", "fixOperator", false, "Include the fix operator to deal with complex constraints (default false)");
+        option9.setRequired(false);
+        options.addOption(option9);
         
         String header = "Execute the pipeline.\n\n";
         String footer = "\nPlease report issues at https://github.com/alxbrd/mdeoptimiser4fm";
@@ -130,6 +133,7 @@ public class PipelineRunnerExternal {
         }
         
 		Integer sv = Integer.parseInt(stoppingvalue);
+		boolean acapulcoIncludeFix = cmd.hasOption("fix");
 		
         if (allTools || sTool.equalsIgnoreCase(ACAPULCO_TOOL_NAME)) {
         	aCaPulCO_Main acapulcoSearch = new aCaPulCO_Main();
@@ -139,7 +143,7 @@ public class PipelineRunnerExternal {
 				System.out.println("Running ACAPULCO...");
 				for (int i = 1; i <= runs; i++) {
 					System.out.println("ACAPULCO Run " + i + "/" + runs + "...");
-					acapulcoSearch.run(fullFmPath, sc, sv, false);
+					acapulcoSearch.run(fullFmPath, sc, sv, false, acapulcoIncludeFix);
 					Thread.sleep(1000);
 					System.gc();
 				}

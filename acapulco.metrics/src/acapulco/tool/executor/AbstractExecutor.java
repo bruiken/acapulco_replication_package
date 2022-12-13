@@ -30,6 +30,8 @@ public abstract class AbstractExecutor implements Runnable {
 	@Option(names = { "-d", "--debug" }, required = false, description = "Debug mode")
 	protected boolean debugMode;
 
+	@Option(names = { "--fix-operator" }, required = false, description = "Include fix operator to deal with complex constraints", defaultValue = "false")
+	protected boolean fixOperatorMode;
 	@Override
 	public abstract void run();
 }

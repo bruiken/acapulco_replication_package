@@ -19,6 +19,7 @@ public class aCaPulCO_Problem extends Problem {
     public static int numFeatures;
     private int numConstraints;
     public static List<List<Integer>> constraints;
+    public static List<List<Integer>> complexConstraints;
     private double[] usability;
     private double[] battery;
     private double[] footprint;
@@ -30,13 +31,13 @@ public class aCaPulCO_Problem extends Problem {
     
     private static final int N_VARS = 1, N_OBJS = 5;
 
-    public aCaPulCO_Problem(String fm, String augment, String mandatory, String dead, String seedfile) throws Exception {
+    public aCaPulCO_Problem(String fm, String augment, String mandatory, String dead, String seedfile, String complex) throws Exception {
         this.numberOfVariables_ = N_VARS;
         this.numberOfObjectives_ = N_OBJS;
         this.numberOfConstraints_ = 0;
         this.fm = fm;
         this.augment = augment;
-        loadFM(fm, augment);
+        loadFM(fm, augment, complex);
         loadMandatoryDeadFeaturesIndices(mandatory, dead);
         loadSeed(seedfile);
         this.solutionType_ = new aCaPulCO_BinarySolution(this, numFeatures, fm,mandatoryFeaturesIndices, deadFeaturesIndices, seed, new ArrayList<>(), new ArrayList<>(), constraints);
@@ -44,6 +45,10 @@ public class aCaPulCO_Problem extends Problem {
 
     public List<List<Integer>> getConstraints() {
         return constraints;
+    }
+    
+    public List<List<Integer>> getComplexConstraints() {
+        return complexConstraints;
     }
 
     @Override
@@ -118,7 +123,7 @@ public class aCaPulCO_Problem extends Problem {
         return s;
     }
 
-    public void loadFM(String fm, String augment) throws Exception {
+    public void loadFM(String fm, String augment, String complex) throws Exception {
         BufferedReader in = new BufferedReader(new FileReader(fm));
         String line;
         while ((line = in.readLine()) != null) {
@@ -136,7 +141,6 @@ public class aCaPulCO_Problem extends Problem {
             if (!line.startsWith("c") && !line.startsWith("p") && !line.isEmpty()) {
                 StringTokenizer st = new StringTokenizer(line, " ");
                 List<Integer> constraint = new ArrayList<Integer>(st.countTokens() - 1);
-
                 while (st.hasMoreTokens()) {
                     int i = Integer.parseInt(st.nextToken());
                     if (i != 0) {
@@ -144,6 +148,26 @@ public class aCaPulCO_Problem extends Problem {
                     }
                 }
                 constraints.add(constraint);
+            }
+        }
+        in.close();
+
+        in = new BufferedReader(new FileReader(complex));
+        complexConstraints = new ArrayList<List<Integer>>();
+        while ((line = in.readLine()) != null) {
+            line = line.trim();
+            if (!line.startsWith("c") && !line.startsWith("p") && !line.isEmpty()) {
+                StringTokenizer st = new StringTokenizer(line, " ");
+                List<Integer> constraint = new ArrayList<Integer>(st.countTokens() - 1);
+                while (st.hasMoreTokens()) {
+                    int i = Integer.parseInt(st.nextToken());
+                    if (i != 0) {
+                        constraint.add(i);
+                    }
+                }
+                if (!constraints.contains(constraint)) {
+                	complexConstraints.add(constraint);
+                }
             }
         }
         in.close();
