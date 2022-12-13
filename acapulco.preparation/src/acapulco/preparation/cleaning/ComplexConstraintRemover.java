@@ -39,21 +39,28 @@ public class ComplexConstraintRemover {
 		File fmFile = new File(fmPath);
 		IFeatureModel fm = loadSXFM(fmFile);
 		printMetrics(fm);
-
+		
 		List<IConstraint> simple = new ArrayList<>();
+		List<IConstraint> complex = new ArrayList<>();
 		for (IConstraint c : fm.getConstraints()) {
-			if (isSimple(c))
-				simple.add(c);
+			if (isSimple(c)) {
+				simple.add(c);				
+			} else {				
+				complex.add(c);
+			}
 		}
 
-		System.out.println("Removed " + (fm.getConstraints().size() - simple.size()) + " complex constraints.");
+		System.out.println("Feature model contains " + complex.size() + " complex constraints.");
 		fm.setConstraints(simple);
-		printMetrics(fm);
+		
+		IFeatureModel complexConstraintsFM = fm.clone();
+		complexConstraintsFM.setConstraints(complex);
 
-		// Save clean fm
+		// Save fms
 		File fmOutputFile = new File(fmPath + "-nocomplex.sxfm.xml");
-		// System.out.println(fm);
 		saveSXFM(fmOutputFile, fm);
+		File fmOutputFileComplex = new File(fmPath + "-onlycomplex.sxfm.xml");
+		saveSXFM(fmOutputFileComplex, complexConstraintsFM);
 	}
 
 	private static boolean isSimple(IConstraint c) {

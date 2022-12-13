@@ -43,16 +43,19 @@ public class PreparationPipeline {
 		String[] input = new String[1];
 		input[0] = directoryInput + "\\" + fmNameInput + ".xml";
 		ComplexConstraintRemover.main(input);
-
-		input[0] += "-nocomplex.sxfm.xml";
 		openSystemErr();
+
+		input[0] = directoryInput + "\\" + fmNameInput + ".xml-nocomplex.sxfm.xml";
+		Cleaner.main(input);
+		input[0] = directoryInput + "\\" + fmNameInput + ".xml-onlycomplex.sxfm.xml";
 		Cleaner.main(input);
 		System.out.println("[Done cleaning.] ");
+		
 		System.out.println("[Start attribute value generation.] ");
 		// Call Values Generator -> obj
 
 		// Generate obj without header (MODAGAME) and with header (MDEO)
-		String pathCleaned = input[0] + ".clean.sxfm.xml";
+		String pathCleaned = directoryInput + "\\" + fmNameInput + ".xml-nocomplex.sxfm.xml.clean.sxfm.xml";
 		input = new String[3];
 		input[0] = pathCleaned;
 		input[1] = directoryInput + "\\" + qaNameInput;
@@ -63,13 +66,13 @@ public class PreparationPipeline {
 
 		System.out.println("[Begin SATIBEA input generation.] ");
 		// Call EMFConverter -> dimacs + augment + dead + mandatory
+		MainModagameToSatibea.execute(directoryInput + "\\", fmNameInput, directoryInput + "\\");
+
+		// call SATIBEA_richseedGenerator
 		input = new String[3];
 		input[0] = fmNameInput + ".xml-nocomplex.sxfm.xml.clean.sxfm";
 		input[1] = directoryInput + "\\";
 		input[2] = directoryInput + "\\";
-		MainModagameToSatibea.main(input);
-
-		// call SATIBEA_richseedGenerator
 		RandomRichSee.main(input);
 
 		// Call EMFConverter -> csv for Modagame
@@ -82,13 +85,16 @@ public class PreparationPipeline {
 		new File(pathOutput + "\\" + caseName + "\\modagame").mkdirs();
 		new File(pathOutput + "\\" + caseName + "\\satibea").mkdirs();
 		String baseInputPath = directoryInput + "\\" + fmNameInput + ".xml-nocomplex.sxfm.xml.clean.sxfm";
-
+		String baseInputPathComplex = directoryInput + "\\" + fmNameInput + ".xml-onlycomplex.sxfm.xml.clean.sxfm";
+		
 		System.out.println("** Done with file generation. **");
 
 		// Copy Acapulco files
 		String baseOutputPath = pathOutput + "\\" + caseName + "\\acapulco\\";
 		Files.copy(new File(baseInputPath + ".dimacs").toPath(),
 				new File(baseOutputPath + caseName + ".dimacs").toPath(), StandardCopyOption.REPLACE_EXISTING);
+		Files.copy(new File(baseInputPathComplex + ".dimacs").toPath(),
+				new File(baseOutputPath + caseName + ".dimacs.complex").toPath(), StandardCopyOption.REPLACE_EXISTING);
 		Files.copy(new File(baseInputPath + ".dimacs.augment").toPath(),
 				new File(baseOutputPath + caseName + ".dimacs.augment").toPath(), StandardCopyOption.REPLACE_EXISTING);
 		Files.copy(new File(baseInputPath + ".dimacs.richseed").toPath(),
@@ -98,7 +104,8 @@ public class PreparationPipeline {
 				StandardCopyOption.REPLACE_EXISTING);
 		Files.copy(new File(baseInputPath + ".dimacs.dead").toPath(),
 				new File(baseOutputPath + caseName + ".dimacs.dead").toPath(), StandardCopyOption.REPLACE_EXISTING);
-
+		System.out.println("Done copying Acapulco files");
+		
 		// Copy Modagame files
 		baseOutputPath = pathOutput + "\\" + caseName + "\\modagame\\" + caseName;
 		System.out.println(baseOutputPath);
@@ -112,7 +119,8 @@ public class PreparationPipeline {
 				StandardCopyOption.REPLACE_EXISTING);
 		Files.copy(new File(baseInputPath + ".csv").toPath(), new File(baseOutputPath + "\\seeds\\" + caseName + ".csv").toPath(),
 				StandardCopyOption.REPLACE_EXISTING);
-
+		System.out.println("Done copying Modagame files");
+		
 		// Copy Satibea files
 		baseOutputPath = pathOutput + "\\" + caseName + "\\satibea\\";
 		Files.copy(new File(baseInputPath + ".dimacs").toPath(),
@@ -126,7 +134,8 @@ public class PreparationPipeline {
 				StandardCopyOption.REPLACE_EXISTING);
 		Files.copy(new File(baseInputPath + ".dimacs.richseed").toPath(),
 				new File(baseOutputPath + caseName + ".dimacs.richseed").toPath(), StandardCopyOption.REPLACE_EXISTING);
-
+		System.out.println("Done copying Satibea files");
+		
 		// Cleanup: delete generated files from temporary directory
 		final String fmNameInputFinal = fmNameInput;
 		String[] generatedFiles = new File(directoryInput).list(new FilenameFilter() {
@@ -135,8 +144,10 @@ public class PreparationPipeline {
 				return name.startsWith(fmNameInputFinal) && !name.equals(fmNameInputFinal + ".xml");
 			}
 		});
-		for (String file : generatedFiles)
+		for (String file : generatedFiles) {
 			new File(directoryInput + "/" + file).delete();
+			System.out.println("Deleted aux file: " + file);
+		}
 
 		System.out.println("** Done with copying. **");
 	}

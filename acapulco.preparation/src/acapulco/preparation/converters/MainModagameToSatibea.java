@@ -13,35 +13,49 @@ import de.ovgu.featureide.fm.core.io.dimacs.DIMACSFormat;
 import de.ovgu.featureide.fm.core.job.monitor.NullMonitor;
 
 public class MainModagameToSatibea {
+	public static void execute(String inputPath, String inputName, String outputPath) {
+		final String[] callArgs = {inputName, inputPath, outputPath};
+		MainModagameToSatibea.main(callArgs);
+	}
+	
 	public static void main(String[] args) {
-		String name, inPath, outPath;
+		String shortName, name, inPath, outPath;
 		
 		if (args.length == 0) {
-			name = "automotive2_1.sxfm.xml-nocomplex.sxfm.xml.clean.sxfm";
+			shortName = "automotive2_1";
 			inPath = "modagame/";
 			outPath = "satibea/";
 		} else {
-			name = args[0];
+			shortName = args[0];
 			inPath = args[1];
 			outPath = args[2];
 		}
-
+		
+		name = shortName + ".xml-nocomplex.sxfm.xml.clean.sxfm";
+		String onlyComplexFMName = shortName + ".xml-onlycomplex.sxfm.xml.clean.sxfm";
+		
 		// Inputs
 		File fmFile = new File(inPath + name + ".xml");
+		File fmFileComplex = new File(inPath + onlyComplexFMName + ".xml");
 		File fmObjFile = new File(inPath + name + ".obj");
 
 		// Outputs
 		File outputFMFile = new File(outPath + name + ".dimacs");
+		File outputComplexFMFile = new File(outPath + onlyComplexFMName + ".dimacs");
 		File outputObjFile = new File(outPath + name + ".dimacs.augment");
 		File outputDeadFile = new File(outPath + name + ".dimacs.dead");
 		File outputMandatoryFile = new File(outPath + name + ".dimacs.mandatory");
 
 		IFeatureModel fm = Utils.loadSXFM(fmFile);
-
+		IFeatureModel fmComplex = Utils.loadSXFM(fmFileComplex);
+		
 		DIMACSFormat format = new DIMACSFormat();
 		String fmString = format.write(fm);
 		Utils.writeStringToFile(outputFMFile, fmString);
-
+		format = new DIMACSFormat();
+		String fmStringComplex = format.write(fmComplex);
+		Utils.writeStringToFile(outputComplexFMFile, fmStringComplex);
+		
 		Map<String, String> dimacsNumberToF = new LinkedHashMap<String, String>();
 		Map<String, String> fToDimacsNumber = new LinkedHashMap<String, String>();
 		for (String line : Utils.getLinesOfFile(outputFMFile)) {
