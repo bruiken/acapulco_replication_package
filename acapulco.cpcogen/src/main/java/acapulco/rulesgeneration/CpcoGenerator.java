@@ -26,10 +26,11 @@ import emf.utils.HenshinFileWriter;
 public class CpcoGenerator {
 	public static void generatorCPCOs(FeatureModel fm, String fmName, String outpath, String originalInputFMPath) {
 		outpath += "/"+fmName;
-		FeatureActivationDiagram ad = new FeatureActivationDiagram(fm); // FM-specific
+		
 		FMConfigurationMetamodelGenerator metamodelGen = new FMConfigurationMetamodelGenerator(fm, fmName, fmName,
 				"http://"+fmName);
 		
+		FeatureActivationDiagram ad = new FeatureActivationDiagram(fm); // FM-specific
 		metamodelGen.generateMetamodel();
 		System.out.println(outpath);
 		metamodelGen.saveMetamodel(outpath + "/acapulco/" + fmName+".dimacs.ecore");
@@ -52,15 +53,17 @@ public class CpcoGenerator {
 		}
 		System.out.println("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
 		
-		for (Feature f : trueOptional) {
+		int totalOperations = trueOptional.size();
+		for (int fi = 0; fi < trueOptional.size(); fi++) {
+			Feature f = trueOptional.get(fi);
 			if (!deadFeatures.contains(f.getName())) {
-				System.out.println("Generating Act CPCO for feature: " + f.getName());	
+				System.out.println(String.format("[%d/%d] Generating Act CPCO for feature: %s - ", fi + 1, totalOperations, f.getName()));	
 				FeatureActivationSubDiagram sd = ad.calculateSubdiagramFor(f, true); // CPCO-specific
 				Rule rule = ActivationDiagToRuleConverter.convert(sd, metamodelGen.geteClasses());
 				rule = HenshinConfigurator.removeVariability(rule);
 				HenshinFileWriter.writeModuleToPath(Collections.singletonList(rule), outpath + "/acapulco/" + fmName+".dimacs.cpcos/"+rule.getName()+".hen");
 				
-				System.out.println("Generating De CPCO for feature: " + f.getName());
+				System.out.println(String.format("[%d/%d] Generating De CPCO for feature: %s - ", fi + 1, totalOperations, f.getName()));
 				sd = ad.calculateSubdiagramFor(f, false); // CPCO-specific
 				rule = ActivationDiagToRuleConverter.convert(sd, metamodelGen.geteClasses());
 				rule = HenshinConfigurator.removeVariability(rule);
